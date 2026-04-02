@@ -124,8 +124,8 @@ app.get("/dashboard", (req, res) => {
 
   const flatCost = property ? property.totalCost : 0;
 
-  const selfTotal = demands.reduce((a, d) => a + (d.selfPaid || 0), 0);
-  const bankTotal = demands.reduce((a, d) => a + (d.bankPaid || 0), 0);
+  const selfTotal = demands.reduce((a, d) => a + Number(d.selfPaid || 0), 0);
+  const bankTotal = demands.reduce((a, d) => a + Number(d.bankPaid || 0), 0);
 
   const totalDisbursed = selfTotal + bankTotal;
   const remaining = flatCost - totalDisbursed;
