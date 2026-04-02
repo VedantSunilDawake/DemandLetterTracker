@@ -238,8 +238,8 @@ async function addDemand() {
       amount: Number(amountVal),
       dueDate: dueVal,
       status: "Pending",
-      selfPaid: Number(self.value) || 0,
-      bankPaid: Number(bank.value) || 0,
+      selfPaid: self.value ? Number(self.value) : 0,
+      bankPaid: bank.value ? Number(bank.value) : 0,
       file: fileName
     })
   });
@@ -270,7 +270,7 @@ async function load() {
   <div class="card">Bank Funded<br>₹${data.bankTotal}</div>
 `;
 
-  const demands = await fetch(`/demands/${propertyId}`).then(r => r.json());
+  const demands = await fetch(`/demands`).then(r => r.json());
 
   table.innerHTML = demands.map(d => `
     <tr>
