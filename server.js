@@ -129,6 +129,12 @@ app.get("/dashboard/:propertyId", (req, res) => {
     pending: totalDemand - totalPaid,
     loan
   });
+  app.get("/demands/:propertyId", (req, res) => {
+  const data = db.prepare("SELECT * FROM demands WHERE propertyId=?")
+    .all(req.params.propertyId);
+
+  res.json(data);
+});
 });
 
 app.listen(process.env.PORT || 3000, () => console.log("Server running"));
