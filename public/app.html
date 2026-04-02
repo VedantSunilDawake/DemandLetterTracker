@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Builder Tracker</h2>
+
+<h3>Add Property</h3>
+<input id="builder" placeholder="Builder Name"><br>
+<input id="cost" placeholder="Total Cost"><br>
+<button onclick="addProperty()">Save Property</button>
+
+<hr>
+
+<h3>Add Demand</h3>
+<input id="stage" placeholder="Stage"><br>
+<input id="amount" placeholder="Amount"><br>
+<input id="due" type="date"><br>
+<input id="self" placeholder="Self Paid"><br>
+<input id="bank" placeholder="Bank Paid"><br>
+<button onclick="addDemand()">Add Demand</button>
+
+<hr>
+
+<h3>Dashboard</h3>
+<button onclick="load()">Load Dashboard</button>
+
+<div id="data"></div>
+
+<script>
+const userId = localStorage.getItem("userId") || 1;
+const propertyId = 1;
+
+async function addProperty() {
+  await fetch('/property', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      userId: userId,
+      builderName: builder.value,
+      totalCost: cost.value
+    })
+  });
+  alert("Property Added");
+}
+
+async function addDemand() {
+  await fetch('/demand', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      propertyId: propertyId,
+      stage: stage.value,
+      amount: amount.value,
+      dueDate: due.value,
+      status: "Pending",
+      selfPaid: self.value || 0,
+      bankPaid: bank.value || 0
+    })
+  });
+  alert("Demand Added");
+}
+
+async function load() {
+  const res = await fetch(`/dashboard/${propertyId}`);
+  const data = await res.json();
+
+  document.getElementById("data").innerHTML = `
+    <b>Total Demand:</b> ${data.totalDemand} <br>
+    <b>Total Paid:</b> ${data.totalPaid} <br>
+    <b>Pending:</b> ${data.pending}
+  `;
+}
+</script>
+
+</body>
+</html>
