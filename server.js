@@ -87,12 +87,15 @@ app.post("/login", async (req, res) => {
 
 // ADD PROPERTY
 app.post("/property", (req, res) => {
-  const { userId, builderName, totalCost } = req.body;
+  const { totalCost } = req.body;
 
-  db.prepare("INSERT INTO property (userId, builderName, totalCost) VALUES (?, ?, ?)")
-    .run(userId, builderName, totalCost);
+  // Remove old property (MVP = single property)
+  db.prepare("DELETE FROM property").run();
 
-  res.send("Property Added");
+  db.prepare("INSERT INTO property (totalCost) VALUES (?)")
+    .run(totalCost);
+
+  res.send("Property Saved");
 });
 
 // ADD DEMAND
