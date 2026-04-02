@@ -100,6 +100,16 @@ th, td {
 
 <!-- ADD DEMAND -->
 <div class="section">
+  <div class="section">
+<h3>Property Details</h3>
+
+<div class="form-group">
+<label>Total Flat Cost</label>
+<input id="flatCost" type="number">
+</div>
+
+<button onclick="saveFlat()">Save Property</button>
+</div>
 <h3>Add Demand</h3>
 
 <div class="form-group">
@@ -167,6 +177,22 @@ th, td {
 </div>
 
 <script>
+  async function saveFlat() {
+  const value = document.getElementById("flatCost").value;
+
+  if (!value) {
+    alert("Enter flat cost");
+    return;
+  }
+
+  await fetch("/property", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ totalCost: Number(value) })
+  });
+
+  load();
+}
 const propertyId = 1;
 let isSubmitting = false;
 
@@ -224,7 +250,7 @@ async function addDemand() {
   due.value = "";
   self.value = "";
   bank.value = "";
-  file.value = "";
+  document.getElementById("file").value = "";
 
   isSubmitting = false;
   addBtn.disabled = false;
@@ -233,14 +259,16 @@ async function addDemand() {
 }
 
 async function load() {
-  const res = await fetch(`/dashboard/${propertyId}`);
+  const res = await fetch(`/dashboard`);
   const data = await res.json();
 
   cards.innerHTML = `
-    <div class="card">Total Demand<br>₹${data.totalDemand}</div>
-    <div class="card">Total Paid<br>₹${data.totalPaid}</div>
-    <div class="card">Pending<br>₹${data.pending}</div>
-  `;
+  <div class="card">Flat Cost<br>₹${data.flatCost}</div>
+  <div class="card">Disbursed<br>₹${data.totalDisbursed}</div>
+  <div class="card">Remaining<br>₹${data.remaining}</div>
+  <div class="card">Self Funded<br>₹${data.selfTotal}</div>
+  <div class="card">Bank Funded<br>₹${data.bankTotal}</div>
+`;
 
   const demands = await fetch(`/demands/${propertyId}`).then(r => r.json());
 
