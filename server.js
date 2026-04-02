@@ -117,27 +117,26 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 // DASHBOARD
-app.get("/dashboard/:propertyId", (req, res) => {
-  const propertyId = req.params.propertyId;
+app.get("/dashboard", (req, res) => {
 
-  const demands = db.prepare("SELECT * FROM demands WHERE propertyId=?").all(propertyId);
-  const loan = db.prepare("SELECT * FROM loan WHERE propertyId=?").get(propertyId);
+  const property = db.prepare("SELECT * FROM property LIMIT 1").get();
+  const demands = db.prepare("SELECT * FROM demands").all();
 
-  const totalDemand = demands.reduce((a, d) => a + d.amount, 0);
-  const totalPaid = demands.reduce((a, d) => a + d.selfPaid + d.bankPaid, 0);
+  const flatCost = property ? property.totalCost : 0;
+
+  const selfTotal = demands.reduce((a, d) => a + (d.selfPaid || 0), 0);
+  const bankTotal = demands.reduce((a, d) => a + (d.bankPaid || 0), 0);
+
+  const totalDisbursed = selfTotal + bankTotal;
+  const remaining = flatCost - totalDisbursed;
 
   res.json({
-    totalDemand,
-    totalPaid,
-    pending: totalDemand - totalPaid,
-    loan
+    flatCost,
+    totalDisbursed,
+    remaining,
+    selfTotal,
+    bankTotal
   });
-  app.get("/demands/:propertyId", (req, res) => {
-  const data = db.prepare("SELECT * FROM demands WHERE propertyId=?")
-    .all(req.params.propertyId);
-
-  res.json(data);
-});
 });
 
 app.listen(process.env.PORT || 3000, () => console.log("Server running"));
