@@ -2,43 +2,83 @@
 <html>
 <head>
 <title>Builder Tracker</title>
+
 <style>
 body {
-  font-family: Arial;
+  font-family: 'Segoe UI';
   margin: 0;
-  background: #f4f6f8;
+  background: #f5f7fb;
 }
 
 .nav {
-  background: #2c3e50;
+  background: #1e293b;
   color: white;
-  padding: 15px;
+  padding: 15px 25px;
   font-size: 20px;
 }
 
 .container {
   padding: 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+.section {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+}
+
+h3 {
+  margin-bottom: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: gray;
+}
+
+.cards {
+  display: flex;
+  gap: 10px;
 }
 
 .card {
-  background: white;
+  flex: 1;
+  background: #f1f5f9;
   padding: 15px;
-  margin: 10px;
   border-radius: 8px;
-  display: inline-block;
-  width: 22%;
-}
-
-input, button {
-  margin: 5px;
-  padding: 8px;
+  text-align: center;
 }
 
 table {
   width: 100%;
-  background: white;
-  margin-top: 20px;
   border-collapse: collapse;
+}
+
+th {
+  background: #e2e8f0;
 }
 
 th, td {
@@ -46,36 +86,66 @@ th, td {
   border-bottom: 1px solid #ddd;
 }
 
-button {
-  background: #3498db;
-  color: white;
-  border: none;
-  cursor: pointer;
+.error {
+  color: red;
 }
 </style>
 </head>
 
 <body>
 
-<div class="nav">🏠 Builder Demand Tracker</div>
+<div class="nav">🏠 Builder Tracker</div>
 
 <div class="container">
 
+<!-- ADD DEMAND -->
+<div class="section">
 <h3>Add Demand</h3>
-<input id="stage" placeholder="Stage">
-<input id="amount" placeholder="Amount">
+
+<div class="form-group">
+<label>Stage</label>
+<input id="stage">
+</div>
+
+<div class="form-group">
+<label>Amount</label>
+<input id="amount" type="number">
+</div>
+
+<div class="form-group">
+<label>Due Date</label>
 <input id="due" type="date">
-<input id="self" placeholder="Self Paid">
-<input id="bank" placeholder="Bank Paid">
+</div>
 
+<div class="form-group">
+<label>Self Paid (optional)</label>
+<input id="self" type="number">
+</div>
+
+<div class="form-group">
+<label>Bank Paid (optional)</label>
+<input id="bank" type="number">
+</div>
+
+<div class="form-group">
+<label>Upload File</label>
 <input type="file" id="file">
+</div>
 
-<button onclick="addDemand()">Add Demand</button>
+<button id="addBtn" onclick="addDemand()">Add Demand</button>
 
+<p class="error" id="error"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div class="section">
 <h3>Dashboard</h3>
 
-<div id="cards"></div>
+<div class="cards" id="cards"></div>
+</div>
 
+<!-- TABLE -->
+<div class="section">
 <h3>Demand List</h3>
 
 <table>
@@ -94,16 +164,35 @@ button {
 
 </div>
 
+</div>
+
 <script>
 const propertyId = 1;
+let isSubmitting = false;
 
 async function addDemand() {
+  if (isSubmitting) return;
+
+  const stageVal = stage.value.trim();
+  const amountVal = amount.value;
+  const dueVal = due.value;
+
+  // VALIDATION
+  if (!stageVal || !amountVal || !dueVal) {
+    error.innerText = "Stage, Amount and Due Date are required";
+    return;
+  }
+
+  isSubmitting = true;
+  addBtn.disabled = true;
+  error.innerText = "";
+
   let fileName = "";
 
-  const file = document.getElementById("file").files[0];
-  if (file) {
+  const fileInput = document.getElementById("file").files[0];
+  if (fileInput) {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileInput);
 
     const res = await fetch("/upload", {
       method: "POST",
@@ -119,15 +208,26 @@ async function addDemand() {
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
       propertyId,
-      stage: stage.value,
-      amount: amount.value,
-      dueDate: due.value,
+      stage: stageVal,
+      amount: Number(amountVal),
+      dueDate: dueVal,
       status: "Pending",
-      selfPaid: self.value || 0,
-      bankPaid: bank.value || 0,
+      selfPaid: Number(self.value) || 0,
+      bankPaid: Number(bank.value) || 0,
       file: fileName
     })
   });
+
+  // RESET FORM
+  stage.value = "";
+  amount.value = "";
+  due.value = "";
+  self.value = "";
+  bank.value = "";
+  file.value = "";
+
+  isSubmitting = false;
+  addBtn.disabled = false;
 
   load();
 }
@@ -136,22 +236,22 @@ async function load() {
   const res = await fetch(`/dashboard/${propertyId}`);
   const data = await res.json();
 
-  document.getElementById("cards").innerHTML = `
-    <div class="card">Total Demand: ₹${data.totalDemand}</div>
-    <div class="card">Total Paid: ₹${data.totalPaid}</div>
-    <div class="card">Pending: ₹${data.pending}</div>
+  cards.innerHTML = `
+    <div class="card">Total Demand<br>₹${data.totalDemand}</div>
+    <div class="card">Total Paid<br>₹${data.totalPaid}</div>
+    <div class="card">Pending<br>₹${data.pending}</div>
   `;
 
   const demands = await fetch(`/demands/${propertyId}`).then(r => r.json());
 
-  document.getElementById("table").innerHTML = demands.map(d => `
+  table.innerHTML = demands.map(d => `
     <tr>
       <td>${d.stage}</td>
-      <td>${d.amount}</td>
+      <td>₹${d.amount}</td>
       <td>${d.dueDate}</td>
-      <td>${d.selfPaid}</td>
-      <td>${d.bankPaid}</td>
-      <td>${d.file ? `<a href="/uploads/${d.file}" target="_blank">View</a>` : ""}</td>
+      <td>₹${d.selfPaid}</td>
+      <td>₹${d.bankPaid}</td>
+      <td>${d.file ? `<a href="/uploads/${d.file}" target="_blank">View</a>` : "-"}</td>
     </tr>
   `).join("");
 }
